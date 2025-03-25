@@ -1,25 +1,15 @@
 plugins {
+    `java-library`
     id("jvm-conventions")
 }
 
-gradle.projectsEvaluated {
-    tasks {
-        create("run") {
-            // Build demo
-            dependsOn(":demo:build")
+dependencies {
+    api(libs.joml)
+    api(libs.fastutil)
+}
 
-            // & run it
-            doLast {
-                val jar = project(":demo").buildDir.resolve("libs")
-                    .listFiles { _, fileName ->  fileName.contains("Git") }
-                    ?.firstOrNull()
-                    ?: error("Failed to find demo jar")
-
-                javaexec {
-                    mainClass.set("-jar")
-                    args(jar.absolutePath)
-                }
-            }
-        }
-    }
+// Make base-level `run` task
+tasks.maybeCreate("run").let {
+    it.dependsOn(":demo:run")
+    it.group = "application"
 }

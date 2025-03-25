@@ -2,7 +2,7 @@ import com.diffplug.gradle.spotless.SpotlessExtension
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    `java-library`
+    java
     id("io.freefair.lombok")
     id("com.github.johnrengelman.shadow")
     id("net.kyori.indra.git")
