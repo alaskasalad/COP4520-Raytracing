@@ -107,7 +107,8 @@ public class Raytracer extends JPanel implements KeyListener, Runnable, AutoClos
                 // Kill the entire thing if it blows up
                 running.set(false);
                 close();
-                rock.printStackTrace();
+	            //noinspection CallToPrintStackTrace
+	            rock.printStackTrace();
             }
         }
     }

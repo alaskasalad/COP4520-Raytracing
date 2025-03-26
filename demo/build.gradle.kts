@@ -10,3 +10,7 @@ dependencies {
 application {
     mainClass = "edu.ucf.cop4520raytracing.demo.DemoBootstrapper"
 }
+
+tasks.jar {
+    archiveBaseName = "demo"
+}
