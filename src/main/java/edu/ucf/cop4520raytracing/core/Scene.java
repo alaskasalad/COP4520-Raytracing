@@ -1,19 +1,26 @@
 package edu.ucf.cop4520raytracing.core;
 
+import edu.ucf.cop4520raytracing.core.light.DirectionalLight;
 import edu.ucf.cop4520raytracing.core.light.Light;
+import edu.ucf.cop4520raytracing.core.solid.Plane;
 import edu.ucf.cop4520raytracing.core.solid.Solid;
+import edu.ucf.cop4520raytracing.core.solid.Sphere;
 import edu.ucf.cop4520raytracing.core.util.ArrayUtil;
 import edu.ucf.cop4520raytracing.core.util.Ray3d;
 import it.unimi.dsi.fastutil.Pair;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -21,11 +28,25 @@ import java.util.stream.Stream;
 @Builder
 @Data
 public class Scene {
+	public static final Scene DEFAULT = Scene.builder()
+	                                         .renderExecutor(Executors.newFixedThreadPool(8))
+	                                         .skyboxGenerator(dir -> new Color(182, 227, 229))
+	                                         .solids(
+			                                         new Plane(new Vector3d(0, -5, 0), new Vector3d(0, 1, 0), Color.GRAY),
+			                                         new Sphere(new Vector3d(0, 0, -5), 1, Color.RED),
+			                                         new Sphere(new Vector3d(-2, 0, -4), 0.4, Color.GREEN),
+			                                         new Sphere(new Vector3d(2, -2, -6), 2.2, Color.CYAN)
+	                                         )
+	                                         .lights(
+			                                         new DirectionalLight(new Vector3d(0, 2, 0), Color.WHITE, 0.02)
+	                                         )
+	                                         .build();
+	
 	
 	/**
 	 * The camera
 	 */
-	@NonNull @Builder.Default private final Camera camera = Camera.builder().build();
+	@NonNull @Default private final Camera camera = Camera.builder().build();
 	/**
 	 * The solids
 	 */
@@ -42,21 +63,64 @@ public class Scene {
 	 * The render executor. This is managed and automatically closed
 	 */
 	@NonNull private final ExecutorService renderExecutor;
+	
+	@Default private int width = 800;
+	@Default private int height = 600;
+	
 	/**
-	 * The image
+	 * We swap between two rasters and copy the entire rendered image to the display in one go,
+	 * so we don't get screen tearing from the render being caught in the middle of initializing a frame
 	 */
-	@NonNull @Builder.Default private final BufferedImage image = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
+	@Default private ImageDisplay image = new ImageDisplay(800, 600);
+	
+	
+	private static class ImageDisplay {
+		@Getter
+		private final BufferedImage image;
+		
+		private final WritableRaster buffer1;
+		private final WritableRaster buffer2;
+		
+		private WritableRaster currentBuffer;
+		
+		private ImageDisplay(int width, int height) {
+			image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			buffer1 = image.getRaster().createCompatibleWritableRaster();
+			buffer2 = image.getRaster().createCompatibleWritableRaster();
+			currentBuffer = buffer1;
+		}
+		
+		public void setPixel(int x, int y, Color color) {
+			currentBuffer.setPixel(x, y, new int[] {color.getRed(), color.getGreen(), color.getBlue()});
+		}
+		
+		private void swapBuffers() {
+			if (currentBuffer == buffer1) {
+				currentBuffer = buffer2;
+			} else {
+				currentBuffer = buffer1;
+			}
+		}
+		
+		public void initNextFrame() {
+			image.getRaster().setDataElements(0, 0, currentBuffer);
+			swapBuffers();
+		}
+	}
+	
+	public BufferedImage getImage() {
+		return image.getImage();
+	}
+	
 	
 	public void render() {
-		final int height = image.getHeight();
-		final int width = image.getWidth();
-		
 		var stream = getCoordProducts(width, height);
-
 		stream.parallel()
 		      .map(coord -> Pair.of(coord, normalizeCoordinate(coord, width, height)))
 		      .map(coord_vec -> Pair.of(coord_vec.left(), new Ray3d(camera.getPosition(), coord_vec.right())))
 		      .forEach(this::castRay);
+		
+		image.initNextFrame();
 		/*
 		for (int y = 0; y < height; y++) {
 			int finalY = y;
@@ -150,7 +214,7 @@ public class Scene {
 		}
 		
 		// & set this data on the image
-		image.setRGB(coord.x(), coord.y(), pixelColor.getRGB());
+		image.setPixel(coord.x(), coord.y(), pixelColor);
 	}
 	
 	private record Coordinate(int x, int y) {}

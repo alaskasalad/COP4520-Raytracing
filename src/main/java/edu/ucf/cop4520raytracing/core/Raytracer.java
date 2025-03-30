@@ -1,5 +1,6 @@
 package edu.ucf.cop4520raytracing.core;
 
+import edu.ucf.cop4520raytracing.core.util.Direction;
 import edu.ucf.cop4520raytracing.core.util.KeyPress;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -41,14 +42,14 @@ public class Raytracer extends JPanel implements KeyListener, Runnable, AutoClos
                     KeyEvent.VK_ESCAPE, KeyPress.withKeyPress(e -> close()),
                     KeyEvent.VK_R, KeyPress.withKeyPress(e -> running.set(!running.get())),
                     // Movement related
-                    KeyEvent.VK_SPACE, KeyPress.withKeyPress(e -> scene.getCamera().getPosition().add(0, 1, 0)),
-                    KeyEvent.VK_SHIFT, KeyPress.withKeyPress(e -> scene.getCamera().getPosition().add(0, -1, 0)),
-                    KeyEvent.VK_W, KeyPress.withKeyPress(e -> scene.getCamera().getPosition().add(0, 0, 1)),
-                    KeyEvent.VK_S, KeyPress.withKeyPress(e -> scene.getCamera().getPosition().add(0, 0, -1)),
-                    KeyEvent.VK_A, KeyPress.withKeyPress(e -> scene.getCamera().getPosition().add(-1, 0, 0)),
-                    KeyEvent.VK_D, KeyPress.withKeyPress(e -> scene.getCamera().getPosition().add(1, 0, 0)),
-                    KeyEvent.VK_Q, KeyPress.withKeyPress(e -> scene.getCamera().setYaw(scene.getCamera().getYaw() - 1)),
-                    KeyEvent.VK_E, KeyPress.withKeyPress(e -> scene.getCamera().setYaw(scene.getCamera().getYaw() + 1))
+                    KeyEvent.VK_SPACE, KeyPress.withKeyPress(e -> scene.getCamera().move(Direction.UP, 1)),
+                    KeyEvent.VK_SHIFT, KeyPress.withKeyPress(e -> scene.getCamera().move(Direction.DOWN, 1)),
+                    KeyEvent.VK_W, KeyPress.withKeyPress(e -> scene.getCamera().move(Direction.FORWARD, 1)),
+                    KeyEvent.VK_S, KeyPress.withKeyPress(e -> scene.getCamera().move(Direction.BACKWARD, 1)),
+                    KeyEvent.VK_A, KeyPress.withKeyPress(e -> scene.getCamera().move(Direction.LEFT, 1)),
+                    KeyEvent.VK_D, KeyPress.withKeyPress(e -> scene.getCamera().move(Direction.RIGHT, 1)),
+                    KeyEvent.VK_Q, KeyPress.withKeyPress(e -> scene.getCamera().addYaw(-1)),
+                    KeyEvent.VK_E, KeyPress.withKeyPress(e -> scene.getCamera().addYaw(1))
             ));
         }
 
@@ -99,18 +100,26 @@ public class Raytracer extends JPanel implements KeyListener, Runnable, AutoClos
 
     @Override
     public void run() {
-        while (running.get()) {
-            try {
-                scene.render();
-                repaint();
-            } catch (Throwable rock) {
-                // Kill the entire thing if it blows up
-                running.set(false);
-                close();
-	            //noinspection CallToPrintStackTrace
-	            rock.printStackTrace();
-            }
+        if (!this.running.get()) {
+            return;
         }
+        
+        try {
+//            long startTime = System.nanoTime();
+            scene.render();
+            this.repaint();
+//            long timeElapsed = System.nanoTime() - startTime;
+//            if (timeElapsed < getFrameIntervalNanos()) {
+//                Thread.sleep(getFrameIntervalNanos() - timeElapsed); // sleep until next frame
+//            }
+        } catch (Throwable rock) {
+            // Kill the entire thing if it blows up
+//            running.set(false);
+            //noinspection CallToPrintStackTrace
+            rock.printStackTrace();
+            close();
+        }
+        
     }
 
     @Override
