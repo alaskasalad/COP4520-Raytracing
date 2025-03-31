@@ -1,9 +1,13 @@
 package edu.ucf.cop4520raytracing.core;
 
 import edu.ucf.cop4520raytracing.core.util.Direction;
+import edu.ucf.cop4520raytracing.core.util.IKeyPress;
 import lombok.Builder;
 import lombok.Data;
 import org.joml.Vector3d;
+
+import java.awt.event.KeyEvent;
+import java.util.function.Consumer;
 
 @Data
 @Builder
@@ -30,5 +34,43 @@ public class Camera {
     public void rotateRelative(double pitch, double yaw) {
        addPitch(pitch);
        addYaw(yaw);
+    }
+    
+    public static class Mover implements IKeyPress {
+        // Can't be a method on this class because we're using identity in the set, so it needs to be a single Consumer object
+        private final Consumer<Camera> movementAction;
+        
+        public Mover(Direction movementDirection, double scale) {
+	        this.movementAction = (camera) -> camera.move(movementDirection, scale);
+        }
+        
+        @Override
+        public void onKeyPressed(KeyEvent evt, Raytracer rt) {
+            rt.activeCameraMovementModifiers.add(this.movementAction);
+        }
+        
+        @Override
+        public void onKeyReleased(KeyEvent evt, Raytracer rt) {
+            rt.activeCameraMovementModifiers.remove(this.movementAction);
+        }
+    }
+    
+    public static class Rotater implements IKeyPress {
+        // Can't be a method on this class because we're using identity in the set, so it needs to be a single Consumer object
+        private final Consumer<Camera> movementAction;
+        
+        public Rotater(double pitch, double yaw) {
+            this.movementAction = (camera) -> camera.rotateRelative(pitch, yaw);
+        }
+        
+        @Override
+        public void onKeyPressed(KeyEvent evt, Raytracer rt) {
+            rt.activeCameraMovementModifiers.add(this.movementAction);
+        }
+        
+        @Override
+        public void onKeyReleased(KeyEvent evt, Raytracer rt) {
+            rt.activeCameraMovementModifiers.remove(this.movementAction);
+        }
     }
 }
