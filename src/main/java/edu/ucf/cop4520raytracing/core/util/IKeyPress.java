@@ -14,7 +14,12 @@ public interface IKeyPress {
 	 * @param modsToActions Pairs of modifier MASKS to actions performed.  Combinations (e.g. `ALT_MASK | SHIFT_MASK`) should come sequentially before single values (e.g. `ALT_MASK`)
 	 * @return A wrapped IKeyPress handler that responds to modifier keys being held.
 	 */
-	default IKeyPress withModifiers(IntObjectPair<IKeyPress>... modsToActions) {
+	@SuppressWarnings("unchecked")
+    default IKeyPress withModifiers(IntObjectPair<IKeyPress>... modsToActions) {
+		for (IntObjectPair it : modsToActions) {
+			assert(it.right() instanceof IKeyPress); // actually i hate java
+		}
+
 		var original = this;
 		
 		return new IKeyPress() {
