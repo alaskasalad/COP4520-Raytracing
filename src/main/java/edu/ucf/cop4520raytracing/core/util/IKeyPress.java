@@ -1,7 +1,6 @@
 package edu.ucf.cop4520raytracing.core.util;
 
 import edu.ucf.cop4520raytracing.core.Raytracer;
-import it.unimi.dsi.fastutil.ints.IntObjectPair;
 
 import java.awt.event.KeyEvent;
 
@@ -11,55 +10,36 @@ public interface IKeyPress {
 
     /**
      *
-     * @param modsToActions Pairs of modifier MASKS to actions performed.  Combinations (e.g. `ALT_MASK | SHIFT_MASK`) should come sequentially before single values (e.g. `ALT_MASK`)
-     * @return A wrapped IKeyPress handler that responds to modifier keys being held.
+     * @param mask Modifier mask for action to be performed. (e.g. ALT_DOWN_MASK | SHIFT_DOWN_MASK for Alt+Shift)
+     * @param action The action to be performed if this modifier is held.
+     * @return A wrapped IKeyPress handler that responds to the modifier key.
      */
     @SuppressWarnings("unchecked")
-    default IKeyPress withModifiers(IntObjectPair<IKeyPress>... modsToActions) {
-        for (IntObjectPair it : modsToActions) {
-            assert(it.right() instanceof IKeyPress); // actually i hate java
-        }
-
-        var original = this;
+    default IKeyPress withModifier(int mask, IKeyPress action) {
+        final var wrappedAction = this;
 
         return new IKeyPress() {
-            private final IKeyPress originalAction = original;
-            private final IntObjectPair<IKeyPress>[] mods_actions = modsToActions;
-
             @Override
             public void onKeyPressed(KeyEvent evt, Raytracer rt) {
                 var modifiers = evt.getModifiersEx();
 
-                if (modifiers == 0) {
-                    originalAction.onKeyPressed(evt, rt);
-                    return;
+                if ((mask & modifiers) == mask) {
+                    // if modifiers match exactly, do thing
+                    action.onKeyPressed(evt, rt);
+                } else {
+                    wrappedAction.onKeyPressed(evt, rt);
                 }
-
-                for (IntObjectPair<IKeyPress> modsAction : mods_actions) {
-                    if ((modsAction.leftInt() & modifiers) == modsAction.leftInt()) {
-                        // if modifiers match exactly, do thing
-                        modsAction.right().onKeyPressed(evt, rt);
-                        return;
-                    }
-                }
-
             }
 
             @Override
             public void onKeyReleased(KeyEvent evt, Raytracer rt) {
                 var modifiers = evt.getModifiersEx();
 
-                if (modifiers == 0) {
-                    originalAction.onKeyPressed(evt, rt);
-                    return;
-                }
-
-                for (IntObjectPair<IKeyPress> modsAction : mods_actions) {
-                    if ((modsAction.leftInt() & modifiers) == modsAction.leftInt()) {
-                        // if modifiers match exactly, do thing then short-circuit
-                        modsAction.right().onKeyReleased(evt, rt);
-                        return;
-                    }
+                if ((mask & modifiers) == mask) {
+                    // if modifiers match exactly, do thing
+                    action.onKeyReleased(evt, rt);
+                } else {
+                    wrappedAction.onKeyReleased(evt, rt);
                 }
             }
         };

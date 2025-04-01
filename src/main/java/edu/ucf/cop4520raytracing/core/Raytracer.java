@@ -8,7 +8,6 @@ import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntObjectPair;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import lombok.Getter;
 import lombok.NonNull;
@@ -33,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static edu.ucf.cop4520raytracing.core.util.KeyPress.keyDownOnly;
 import static edu.ucf.cop4520raytracing.core.util.Util.generateAllCoordPairs;
 
 public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
@@ -183,8 +183,8 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
         double xNorm = (xy.x() - width / 2.0) / width;
         double yNorm = (xy.y() - height / 2.0) / height;
         Vector3d dir = new Vector3d(xNorm, yNorm, -1).normalize();
-        dir.rotateY(Math.toRadians(this.cameraController.getActiveCamera().getYaw()));
-        dir.rotateX(Math.toRadians(this.cameraController.getActiveCamera().getPitch()));
+        dir.rotateY(this.cameraController.getActiveCamera().getYaw());
+        dir.rotateX(this.cameraController.getActiveCamera().getPitch());
         return dir;
     }
 
@@ -227,9 +227,9 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
         var coords = generateAllCoordPairs(image.width, image.height);
 
         coords.parallel()
-                .map(coord -> Pair.of(coord, normalizeCoordinate(coord, image.width, image.height)))
-                .map(coord_vec -> Pair.of(coord_vec.left(), new Ray3d(cameraController.getActiveCamera().getPosition(), coord_vec.right())))
-                .forEach(it -> this.castRay(scene, it));
+              .map(coord -> Pair.of(coord, normalizeCoordinate(coord, image.width, image.height)))
+              .map(coord_vec -> Pair.of(coord_vec.left(), new Ray3d(cameraController.getActiveCamera().getPosition(), coord_vec.right())))
+              .forEach(it -> this.castRay(scene, it));
 
         image.initNextFrame();
     }
@@ -251,7 +251,13 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
 
     // region Controls
     protected static double MOVEMENT_PER_FRAME = 0.05;
-    protected static double ROT_SENSITIVITY = 1;
+    /// The amount that the camera controls should rotate the camera per frame, in radians.
+    /// Default is 5 degrees per frame.
+    protected static double ROT_SENSITIVITY = Math.toRadians(5);
+
+    /// How much the binds that increase rotation/movement speed should change it per press.
+    private static final double ROT_SENS_CHANGE = Math.toRadians(2.5);
+    private static final double MVMT_SENS_CHANGE = 0.05;
 
     @SuppressWarnings("unchecked")
     public static Int2ObjectMap<IKeyPress> getDefaultKeybinds() {
@@ -259,8 +265,8 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
         var binds = new Int2ObjectOpenHashMap<>(
                 Map.of(
                         // Application related
-                        KeyEvent.VK_ESCAPE, KeyPress.keyDownOnly((evt, rt) -> rt.close()),
-                        KeyEvent.VK_R, KeyPress.keyDownOnly((evt, rt) -> rt.running.set(!rt.running.get())),
+                        KeyEvent.VK_ESCAPE, keyDownOnly((evt, rt) -> rt.close()),
+                        KeyEvent.VK_R, keyDownOnly((evt, rt) -> rt.running.set(!rt.running.get())),
                         // Movement related
                         KeyEvent.VK_SPACE, new Camera.Mover(Direction.UP, MOVEMENT_PER_FRAME),
                         KeyEvent.VK_SHIFT, new Camera.Mover(Direction.DOWN, MOVEMENT_PER_FRAME),
@@ -274,27 +280,24 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
 
         binds.putAll(Map.of(
                 KeyEvent.VK_LEFT, new Camera.Rotater(0, ROT_SENSITIVITY)
-                        .withModifiers(
-                                IntObjectPair.of(
-                                        KeyEvent.ALT_DOWN_MASK,
-                                        KeyPress.keyDownOnly((_evt, rt) -> Raytracer.ROT_SENSITIVITY -= 0.2))),
+                        .withModifier(
+                                KeyEvent.ALT_DOWN_MASK,
+                                keyDownOnly((_evt, rt) -> Raytracer.ROT_SENSITIVITY -= ROT_SENS_CHANGE)),
                 KeyEvent.VK_RIGHT, new Camera.Rotater(0, -ROT_SENSITIVITY)
-                        .withModifiers(
-                                IntObjectPair.of(
-                                        KeyEvent.ALT_DOWN_MASK,
-                                        KeyPress.keyDownOnly((_evt, rt) -> Raytracer.ROT_SENSITIVITY += 0.2))),
+                        .withModifier(
+                                KeyEvent.ALT_DOWN_MASK,
+                                keyDownOnly((_evt, rt) -> Raytracer.ROT_SENSITIVITY += ROT_SENS_CHANGE)),
                 KeyEvent.VK_UP, new Camera.Rotater(ROT_SENSITIVITY, 0)
-                        .withModifiers(
-                                IntObjectPair.of(
-                                        KeyEvent.ALT_DOWN_MASK,
-                                        KeyPress.keyDownOnly((_evt, rt) -> Raytracer.MOVEMENT_PER_FRAME += 0.05))),
+                        .withModifier(
+                                KeyEvent.ALT_DOWN_MASK,
+                                keyDownOnly((_evt, rt) -> Raytracer.MOVEMENT_PER_FRAME += MVMT_SENS_CHANGE)),
                 KeyEvent.VK_DOWN, new Camera.Rotater(-ROT_SENSITIVITY, 0)
-                        .withModifiers(
-                                IntObjectPair.of(
-                                        KeyEvent.ALT_DOWN_MASK,
-                                        KeyPress.keyDownOnly((_evt, rt) -> Raytracer.MOVEMENT_PER_FRAME -= 0.05)))
+                        .withModifier(
+                                KeyEvent.ALT_DOWN_MASK,
+                                keyDownOnly((_evt, rt) -> Raytracer.MOVEMENT_PER_FRAME -= MVMT_SENS_CHANGE))
         ));
 
+        binds.trim();
         return binds;
     }
     // endregion

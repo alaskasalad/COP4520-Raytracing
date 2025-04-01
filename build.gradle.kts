@@ -13,3 +13,7 @@ tasks.maybeCreate("run").let {
     it.dependsOn(":demo:run")
     it.group = "application"
 }
+
+tasks.build {
+    dependsOn(tasks.named("spotlessApply"))
+}
