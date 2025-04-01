@@ -18,59 +18,62 @@ public class Camera {
     @Builder.Default private double yaw = 0;
     /** The pitch */
     @Builder.Default private double pitch = 0;
-    
+
+
+    // region Movement
     public void addPitch(double pitch) {
         this.pitch += pitch;
     }
-    
+
     public void addYaw(double yaw) {
         this.yaw += yaw;
     }
-    
+
     public void move(Direction dir, double scale) {
         position.add(dir.x * scale, dir.y * scale, dir.z * scale);
     }
-    
+
     public void rotateRelative(double pitch, double yaw) {
        addPitch(pitch);
        addYaw(yaw);
     }
-    
+    // endregion
+
     public static class Mover implements IKeyPress {
-        // Can't be a method on this class because we're using identity in the set, so it needs to be a single Consumer object
+        // Can't be a method reference on this class because we're using *identity* in the set, so it needs to be a singular object
         private final Consumer<Camera> movementAction;
-        
+
         public Mover(Direction movementDirection, double scale) {
-	        this.movementAction = (camera) -> camera.move(movementDirection, scale);
+            this.movementAction = (camera) -> camera.move(movementDirection, scale);
         }
-        
+
         @Override
         public void onKeyPressed(KeyEvent evt, Raytracer rt) {
-            rt.activeCameraMovementModifiers.add(this.movementAction);
+            rt.getCameraController().addTickAction(this.movementAction);
         }
-        
+
         @Override
         public void onKeyReleased(KeyEvent evt, Raytracer rt) {
-            rt.activeCameraMovementModifiers.remove(this.movementAction);
+            rt.getCameraController().removeTickAction(this.movementAction);
         }
     }
-    
+
     public static class Rotater implements IKeyPress {
         // Can't be a method on this class because we're using identity in the set, so it needs to be a single Consumer object
         private final Consumer<Camera> movementAction;
-        
+
         public Rotater(double pitch, double yaw) {
             this.movementAction = (camera) -> camera.rotateRelative(pitch, yaw);
         }
-        
+
         @Override
         public void onKeyPressed(KeyEvent evt, Raytracer rt) {
-            rt.activeCameraMovementModifiers.add(this.movementAction);
+            rt.getCameraController().addTickAction(this.movementAction);
         }
-        
+
         @Override
         public void onKeyReleased(KeyEvent evt, Raytracer rt) {
-            rt.activeCameraMovementModifiers.remove(this.movementAction);
+            rt.getCameraController().removeTickAction(this.movementAction);
         }
     }
 }

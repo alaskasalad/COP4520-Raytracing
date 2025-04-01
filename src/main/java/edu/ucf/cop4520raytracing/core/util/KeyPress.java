@@ -15,7 +15,7 @@ public class KeyPress implements IKeyPress {
     private final BiConsumer<KeyEvent, Raytracer> onKeyPress;
     /** When the key is released */
     private final BiConsumer<KeyEvent, Raytracer> onKeyRelease;
-    
+
     /**
      * Create a {@link KeyPress} with the given key press consumer and no-op key release consumer.
      *
@@ -25,16 +25,16 @@ public class KeyPress implements IKeyPress {
     public static IKeyPress keyDownOnly(BiConsumer<KeyEvent, Raytracer> onKeyPress) {
         return new KeyPress(onKeyPress, KeyPress::defaultConsumer);
     }
-    
+
     public static void defaultConsumer(KeyEvent evt, Raytracer rt) {
         // NO-OP
     }
-    
+
     @Override
     public void onKeyPressed(KeyEvent evt, Raytracer rt) {
         onKeyPress.accept(evt, rt);
     }
-    
+
     @Override
     public void onKeyReleased(KeyEvent evt, Raytracer rt) {
         onKeyRelease.accept(evt, rt);
