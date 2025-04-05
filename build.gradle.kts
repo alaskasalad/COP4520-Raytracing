@@ -6,6 +6,7 @@ plugins {
 dependencies {
     api(libs.joml)
     api(libs.fastutil)
+    testImplementation(libs.junit.jupiter)
 }
 
 // Make base-level `run` task
@@ -16,4 +17,8 @@ tasks.maybeCreate("run").let {
 
 tasks.build {
     dependsOn(tasks.named("spotlessApply"))
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

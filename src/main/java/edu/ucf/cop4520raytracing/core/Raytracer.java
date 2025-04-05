@@ -46,7 +46,10 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
     /**
      * The scene being rendered.
      */
-    @NonNull @Setter private Scene scene;
+    @NonNull
+    @Setter
+    @Getter
+    private Scene scene;
     /**
      * Target FPS
      */
@@ -103,9 +106,6 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
     // endregion
 
 
-
-
-
     // region Swing
     // Initialize the application context
     public void initDefaultJFrame() {
@@ -155,7 +155,7 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
     }
     // endregion
 
-    // region Rendering
+    // region Action
     public void start() {
         renderExecutor.scheduleAtFixedRate(this::nextFrame, 0, 1000 / fps, TimeUnit.MILLISECONDS);
     }
@@ -178,16 +178,7 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
             close();
         }
     }
-
-    private Vector3d normalizeCoordinate(Coordinate xy, int width, int height) {
-        double xNorm = (xy.x() - width / 2.0) / width;
-        double yNorm = (xy.y() - height / 2.0) / height;
-        Vector3d dir = new Vector3d(xNorm, yNorm, -1).normalize();
-        dir.rotateY(this.cameraController.getActiveCamera().getYaw());
-        dir.rotateX(this.cameraController.getActiveCamera().getPitch());
-        return dir;
-    }
-
+    // endregion
 
 
     private void castRay(Scene scene, Pair<Coordinate, Ray3d> coord_ray) {
@@ -227,14 +218,15 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
         var coords = generateAllCoordPairs(image.width, image.height);
 
         coords.parallel()
-              .map(coord -> Pair.of(coord, normalizeCoordinate(coord, image.width, image.height)))
+              .map(coord -> Pair.of(coord, VectorUtil.normalizePixelCoordinate(coord, image.width, image.height)))
+              .map(coord_relcoord -> Pair.of(coord_relcoord.left(), VectorUtil.getRayDirection(coord_relcoord.right(), cameraController.getActiveCamera())))
               .map(coord_vec -> Pair.of(coord_vec.left(), new Ray3d(cameraController.getActiveCamera().getPosition(), coord_vec.right())))
               .forEach(it -> this.castRay(scene, it));
 
         image.initNextFrame();
     }
 
-    // endregion
+
     @Override
     public void close() {
         // Pause rendering
@@ -259,7 +251,6 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
     private static final double ROT_SENS_CHANGE = Math.toRadians(2.5);
     private static final double MVMT_SENS_CHANGE = 0.05;
 
-    @SuppressWarnings("unchecked")
     public static Int2ObjectMap<IKeyPress> getDefaultKeybinds() {
         // Map.of only has 10 slots, so we have to split it up :(
         var binds = new Int2ObjectOpenHashMap<>(
@@ -303,11 +294,12 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
     // endregion
 
 
-    static class CameraController {
+    public static class CameraController {
         /**
          * All cameras currently active in the scene.
          */
         private final List<Camera> cameras = new ArrayList<>();
+
         {
             cameras.add(Camera.builder().build());
         }
@@ -349,6 +341,7 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
         public void addTickAction(Consumer<Camera> it) {
             activeCameraMovementModifiers.add(it);
         }
+
         public void removeTickAction(Consumer<Camera> it) {
             activeCameraMovementModifiers.remove(it);
         }

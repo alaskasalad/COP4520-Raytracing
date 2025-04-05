@@ -19,6 +19,9 @@ public class Camera {
     /** The pitch, stored in radians */
     @Builder.Default private double pitch = 0;
 
+    // TODO figure out how this will work because I can't figure out the ray adding D:
+//    private final Vector3d facing = new Vector3d();
+
 
     // region Movement
     /**
@@ -26,6 +29,7 @@ public class Camera {
      */
     public void addPitch(double pitch) {
         this.pitch += pitch;
+//        facing.rotateX(pitch);
     }
 
     /**
@@ -34,6 +38,7 @@ public class Camera {
      */
     public void addYaw(double yaw) {
         this.yaw += yaw;
+//        facing.rotateY(yaw);
     }
 
     public void move(Direction dir, double scale) {
@@ -46,6 +51,7 @@ public class Camera {
     }
     // endregion
 
+    // region Mutators
     public static class Mover implements IKeyPress {
         // Can't be a method reference on this class because we're using *identity* in the set, so it needs to be a singular object
         private final Consumer<Camera> movementAction;
@@ -83,4 +89,5 @@ public class Camera {
             rt.getCameraController().removeTickAction(this.movementAction);
         }
     }
+    // endregion
 }
