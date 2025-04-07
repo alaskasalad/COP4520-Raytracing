@@ -5,8 +5,11 @@ import edu.ucf.cop4520raytracing.core.light.Light;
 import edu.ucf.cop4520raytracing.core.solid.Plane;
 import edu.ucf.cop4520raytracing.core.solid.Solid;
 import edu.ucf.cop4520raytracing.core.solid.Sphere;
+import edu.ucf.cop4520raytracing.core.util.Util;
+import kotlin.PreconditionsKt;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
@@ -14,6 +17,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -50,8 +54,6 @@ public class Scene implements Cloneable {
      * The render executor. This is managed and automatically closed.
      */
     private final ExecutorService renderExecutor = Executors.newSingleThreadScheduledExecutor();
-    
-
 
     public Scene addLights(Light... lights) {
         Collections.addAll(this.lights, lights);
@@ -94,5 +96,75 @@ public class Scene implements Cloneable {
             throw new AssertionError();
         }
     }
+    
+    // region Runtime Hooks
+    
+    // region Lights
+    /**
+     * Add a light to the scene.
+     * @return ID of the newly added light.
+     */
+    public int addLight(Light light) {
+        this.lights.add(light);
+        return this.lights.size() - 1;
+    }
+
+    /**
+     * For moving the light at runtime
+     * @return The light corresponding to the ID given by {@link #addLight}
+     */
+    @Nullable
+    public Light getLight(int id) {
+        if (Util.inBounds(lights, id)) {
+            return null;
+        }
+
+        return this.lights.get(id);
+    }
+    
+    public boolean removeLight(int id) {
+        if (Util.inBounds(lights, id)) {
+            lights.remove(id);
+            return true;
+        }
+        return false;
+    }
+    // endregion
+
+    // region Solids
+    /**
+     * Add a solid to the scene.
+     * @return ID of the newly added solid.
+     */
+    public int addSolid(Solid solid) {
+        this.solids.add(solid);
+        return this.solids.size() - 1;
+    }
+
+    /**
+     * For moving the solid at runtime
+     * @return The solid corresponding to the ID given by {@link #addSolid}
+     */
+    @Nullable
+    public Solid getSolid(int id) {
+        if (Util.inBounds(solids, id)) {
+            return null;
+        }
+
+        return this.solids.get(id);
+    }
+
+    public boolean removeSolid(int id) {
+        if (Util.inBounds(solids, id)) {
+            solids.remove(id);
+            return true;
+        }
+        return false;
+    }
+    // endregion
+    
+    
+    
+    // endregion
 }
 
