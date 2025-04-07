@@ -10,27 +10,30 @@ import edu.ucf.cop4520raytracing.core.solid.Sphere;
 import org.joml.Vector3d;
 
 import java.awt.Color;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.*;
 import java.util.function.IntPredicate;
 
 public class DemoBootstrapper {
+    static final Scanner input = new Scanner(System.in);
+
     public static void main(String[] args) {
-        @SuppressWarnings("resource")
-        final var raytracer = new Raytracer();
+        @SuppressWarnings("resource") final var raytracer = new Raytracer();
 
         raytracer.initDefaultJFrame();
         raytracer.setScene(Scene.DEFAULT);
         raytracer.start();
 
         Thread commandListener = Thread.startVirtualThread(() -> {
-            var input = new Scanner(System.in);
             cmdloop:
             while (true) {
                 String s = input.nextLine();
                 var commands = Arrays.stream(s.split(" ")).map(String::trim).iterator();
 
                 try {
-                    switch (commands.next()) {
+                    String next = commands.next();
+                    switch (next) {
                         case "debug" -> onDebugCommand(raytracer, commands);
                         case "scene" -> onSceneCommand(raytracer, commands);
                         case "exit" -> {
@@ -38,6 +41,7 @@ public class DemoBootstrapper {
                             System.exit(0);
                             break cmdloop; // should be unreachable
                         }
+                        default -> System.out.println("Unknown arg: " + next);
                     }
                 } catch (NoSuchElementException ignored) {
                 }
@@ -194,7 +198,6 @@ public class DemoBootstrapper {
     //endregion
 
 
-
     static void onDebugCommand(Raytracer raytracer, Iterator<String> commands) {
         switch (commands.next()) {
             case "camera" -> {
@@ -218,9 +221,16 @@ public class DemoBootstrapper {
     }
 
 
-
-
     //region Utils
+    static String readLine(Reader reader) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int c;
+        while ((c = reader.read()) != -1 && Character.getType(c) != Character.LINE_SEPARATOR) {
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
     static Vector3d parsePosArg(Iterator<String> commands) {
         return new Vector3d(Double.parseDouble(commands.next()), Double.parseDouble(commands.next()), Double.parseDouble(commands.next()));
     }
@@ -228,7 +238,8 @@ public class DemoBootstrapper {
     static Color parseColor(String color) throws IllegalArgumentException {
         // get color by name using reflection
         try {
-            return (Color) Color.class.getDeclaredField(color).get(null); // we love ourselves some unsafe user-controlled reflection
+            return (Color) Color.class.getDeclaredField(color)
+                                      .get(null); // we love ourselves some unsafe user-controlled reflection
         } catch (NoSuchFieldException | IllegalAccessException e) {
             try {
                 return Color.decode(color); // if it's not a name, try parsing it as a color int instead
