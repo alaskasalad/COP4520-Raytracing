@@ -1,10 +1,11 @@
 package edu.ucf.cop4520raytracing.core;
 
-import edu.ucf.cop4520raytracing.core.util.Direction;
-import edu.ucf.cop4520raytracing.core.util.IKeyPress;
+import edu.ucf.cop4520raytracing.core.movement.Direction;
+import edu.ucf.cop4520raytracing.core.util.*;
 import lombok.Builder;
 import lombok.Data;
 import org.joml.Vector3d;
+import org.joml.Vector3dc;
 
 import java.awt.event.KeyEvent;
 import java.util.function.Consumer;
@@ -14,18 +15,15 @@ import java.util.function.Consumer;
 public class Camera {
     /** The position of the camera (mutable) */
     @Builder.Default private final Vector3d position = new Vector3d(0, 0, 0);
-    /** The yaw, stored in radians*/
+    /** The yaw, stored in radians. 0 = looking straight */
     @Builder.Default private double yaw = 0;
-    /** The pitch, stored in radians */
+    /** The pitch, stored in radians. 0 = <0, 0, 1> */
     @Builder.Default private double pitch = 0;
-
-    // TODO figure out how this will work because I can't figure out the ray adding D:
-//    private final Vector3d facing = new Vector3d();
 
 
     // region Movement
     /**
-     * @param pitch The pitch to add, in radians. Can be negative.
+     * @param pitch The pitch (horizontal rotation) to add, in radians. Can be negative.
      */
     public void addPitch(double pitch) {
         this.pitch += pitch;
@@ -33,8 +31,7 @@ public class Camera {
     }
 
     /**
-     *
-     * @param yaw The yaw to add, in radians. Can be negative.
+     * @param yaw The yaw (vertical rotation) to add, in radians. Can be negative.
      */
     public void addYaw(double yaw) {
         this.yaw += yaw;
@@ -42,7 +39,42 @@ public class Camera {
     }
 
     public void move(Direction dir, double scale) {
-        position.add(dir.x * scale, dir.y * scale, dir.z * scale);
+        var facing = getFacingVector();
+        var movementVector = switch (dir) {
+            case FORWARD -> facing;
+            case BACKWARD -> facing.negate();
+            default -> {
+                var normal = getNormalVector(facing);
+                yield switch (dir) {
+                    case UP -> normal;
+                    case DOWN -> normal.negate();
+                    default -> {
+                        var xAxis = facing.cross(normal, new Vector3d());
+                        yield switch (dir) {
+                            case LEFT -> xAxis;
+                            case RIGHT -> xAxis.negate();
+                            default -> throw new IllegalArgumentException();
+                        };
+                    }
+                };
+            }
+        };
+        position.add(movementVector.mul(scale));
+    }
+
+    public Vector3d getFacingVector() {
+        return VectorUtil.rotateToMatchPitchYaw(new Vector3d(0, 0, 1), pitch, yaw).normalize();
+    }
+
+    /**
+     * The vector representing the upwardly direction
+     * @param facing
+     * @return
+     */
+    private Vector3d getNormalVector(Vector3dc facing) {
+        // project the absolute y axis onto the facing vector, then subtract that from the y axis
+        Vector3d yAxis = new Vector3d(0, 1, 0);
+        return yAxis.sub(VectorUtil.projectOnto(yAxis, facing)).normalize();
     }
 
     public void rotateRelative(double pitch, double yaw) {

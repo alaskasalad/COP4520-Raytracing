@@ -14,6 +14,10 @@ repositories {
     maven("https://oss.sonatype.org/content/repositories/snapshots/")
 }
 
+dependencies {
+    compileOnly("org.jetbrains:annotations:26.0.2")
+}
+
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 }

@@ -7,6 +7,7 @@ dependencies {
     api(libs.joml)
     api(libs.fastutil)
     testImplementation(libs.junit.jupiter)
+    testImplementation("org.hamcrest:hamcrest:3.0")
 }
 
 // Make base-level `run` task

@@ -1,6 +1,7 @@
 package edu.ucf.cop4520raytracing.core;
 
 import edu.ucf.cop4520raytracing.core.light.Light;
+import edu.ucf.cop4520raytracing.core.movement.Direction;
 import edu.ucf.cop4520raytracing.core.rendering.ImageDisplay;
 import edu.ucf.cop4520raytracing.core.solid.Solid;
 import edu.ucf.cop4520raytracing.core.util.*;
@@ -22,10 +23,7 @@ import java.awt.Graphics;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -270,22 +268,10 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
         );
 
         binds.putAll(Map.of(
-                KeyEvent.VK_LEFT, new Camera.Rotater(0, ROT_SENSITIVITY)
-                        .withModifier(
-                                KeyEvent.ALT_DOWN_MASK,
-                                keyDownOnly((_evt, rt) -> Raytracer.ROT_SENSITIVITY -= ROT_SENS_CHANGE)),
-                KeyEvent.VK_RIGHT, new Camera.Rotater(0, -ROT_SENSITIVITY)
-                        .withModifier(
-                                KeyEvent.ALT_DOWN_MASK,
-                                keyDownOnly((_evt, rt) -> Raytracer.ROT_SENSITIVITY += ROT_SENS_CHANGE)),
-                KeyEvent.VK_UP, new Camera.Rotater(ROT_SENSITIVITY, 0)
-                        .withModifier(
-                                KeyEvent.ALT_DOWN_MASK,
-                                keyDownOnly((_evt, rt) -> Raytracer.MOVEMENT_PER_FRAME += MVMT_SENS_CHANGE)),
-                KeyEvent.VK_DOWN, new Camera.Rotater(-ROT_SENSITIVITY, 0)
-                        .withModifier(
-                                KeyEvent.ALT_DOWN_MASK,
-                                keyDownOnly((_evt, rt) -> Raytracer.MOVEMENT_PER_FRAME -= MVMT_SENS_CHANGE))
+                KeyEvent.VK_LEFT, new Camera.Rotater(-ROT_SENSITIVITY, 0),
+                KeyEvent.VK_RIGHT, new Camera.Rotater(ROT_SENSITIVITY, 0),
+                KeyEvent.VK_UP, new Camera.Rotater(0, -ROT_SENSITIVITY),
+                KeyEvent.VK_DOWN, new Camera.Rotater(0, ROT_SENSITIVITY)
         ));
 
         binds.trim();

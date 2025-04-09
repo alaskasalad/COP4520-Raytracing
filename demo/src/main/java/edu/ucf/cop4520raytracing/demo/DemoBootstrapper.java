@@ -10,8 +10,6 @@ import edu.ucf.cop4520raytracing.core.solid.Sphere;
 import org.joml.Vector3d;
 
 import java.awt.Color;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.*;
 import java.util.function.IntPredicate;
 
@@ -19,7 +17,8 @@ public class DemoBootstrapper {
     static final Scanner input = new Scanner(System.in);
 
     public static void main(String[] args) {
-        @SuppressWarnings("resource") final var raytracer = new Raytracer();
+        @SuppressWarnings("resource")
+        final var raytracer = new Raytracer();
 
         raytracer.initDefaultJFrame();
         raytracer.setScene(Scene.DEFAULT);
@@ -41,14 +40,15 @@ public class DemoBootstrapper {
                             System.exit(0);
                             break cmdloop; // should be unreachable
                         }
-                        default -> System.out.println("Unknown arg: " + next);
+                        default -> System.out.println("Commands: debug, scene");
                     }
-                } catch (NoSuchElementException ignored) {
-                }
+                } catch (NoSuchElementException ignored) {}
             }
         });
     }
 
+
+    //region Scene Commands
     static void onSceneCommand(Raytracer raytracer, Iterator<String> commands) {
         Scene scene = raytracer.getScene();
         switch (commands.next()) {
@@ -60,6 +60,7 @@ public class DemoBootstrapper {
             }
             case "remove" -> scene$removeItem(scene, commands);
             case "list" -> scene$listItems(scene, commands);
+            default -> System.out.println("Usage: scene [add|remove|list]");
         }
     }
 
@@ -68,8 +69,7 @@ public class DemoBootstrapper {
     //region Add Item
     static void scene$addSolid(Scene scene, Iterator<String> commands) {
         if (!commands.hasNext()) { // print usage if no args given
-            System.out.println("Usage: 'scene solid plane [pos] [normal] (color)");
-            System.out.println("Example: 'scene solid sphere 0 0 0 0 1 0 blue'");
+            System.out.println("Usage: 'scene solid [plane|sphere] [pos]'");
             return;
         }
 
@@ -85,7 +85,6 @@ public class DemoBootstrapper {
                 } catch (Exception e) {
                     System.out.println("Usage: 'scene solid sphere [pos] [radius] (color)");
                     System.out.println("Example: 'scene solid sphere 0 0 0 1.0 blue'");
-                    System.out.println("Caused by: " + e.getMessage());
                     yield null;
                 }
             }
@@ -99,12 +98,14 @@ public class DemoBootstrapper {
                     yield new Plane(pos, normal, color);
                 } catch (Exception e) {
                     System.out.println("Usage: 'scene solid plane [pos] [normal] (color)");
-                    System.out.println("Example: 'scene solid sphere 0 0 0 0 1 0 blue'");
-                    System.out.println("\nCaused by exception: " + e.getMessage());
+                    System.out.println("Example: 'scene solid plane 0 0 0 0 1 0 blue'");
                     yield null;
                 }
             }
-            default -> null;
+            default -> {
+                System.out.println("Usage: 'scene [solid|plane]");
+                yield null;
+            }
         };
 
         if (toAdd == null) {
@@ -157,7 +158,7 @@ public class DemoBootstrapper {
             IntPredicate action = switch (next) {
                 case "solid" -> scene::removeSolid;
                 case "light" -> scene::removeLight;
-                default -> throw new IllegalArgumentException("Bad argument \"" + next + "\"");
+                default -> throw new IllegalArgumentException("Bad argument \"" + next + "\". Options: solid, light");
             };
             int id = Integer.parseInt(commands.next());
             if (!action.test(id)) {
@@ -196,6 +197,7 @@ public class DemoBootstrapper {
 
     }
     //endregion
+    //endregion
 
 
     static void onDebugCommand(Raytracer raytracer, Iterator<String> commands) {
@@ -203,12 +205,20 @@ public class DemoBootstrapper {
             case "camera" -> {
                 var cam = raytracer.getCameraController().getActiveCamera();
                 switch (commands.next()) {
-                    case "yaw" -> System.out.println(cam.getYaw());
-                    case "pitch" -> System.out.println(cam.getPitch());
-//                                        case "facing" -> System.out.println(raytracer.getCameraController()
-//                                                                                 .getActiveCamera()
-//                                                                                 .getFacing());
-                    case "pos" -> System.out.println(cam.getPosition());
+                    case "get" -> {
+                        switch (commands.next()) {
+                            case "yaw" -> System.out.println(cam.getYaw());
+                            case "pitch" -> System.out.println(cam.getPitch());
+                            case "pos", "position" -> System.out.println(cam.getPosition());
+                        }
+                    }
+                    case "set" -> {
+                        switch (commands.next()) {
+                            case "pitch" -> cam.setPitch(Double.parseDouble(commands.next()));
+                            case "yaw" -> cam.setYaw(Double.parseDouble(commands.next()));
+                            case "pos" -> cam.getPosition().set(parsePosArg(commands));
+                        }
+                    }
                 }
             }
             case "scene" -> {
@@ -222,15 +232,6 @@ public class DemoBootstrapper {
 
 
     //region Utils
-    static String readLine(Reader reader) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        int c;
-        while ((c = reader.read()) != -1 && Character.getType(c) != Character.LINE_SEPARATOR) {
-            sb.append(c);
-        }
-        return sb.toString();
-    }
-
     static Vector3d parsePosArg(Iterator<String> commands) {
         return new Vector3d(Double.parseDouble(commands.next()), Double.parseDouble(commands.next()), Double.parseDouble(commands.next()));
     }
