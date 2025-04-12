@@ -1,7 +1,9 @@
 [versions]
 joml = "1.10.8"
 fastutil = "8.5.15"
+junitJupiter = "5.8.1"
 
 [libraries]
 joml = { module = "org.joml:joml", version.ref = "joml" }
 fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "fastutil" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }

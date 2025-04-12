@@ -1,7 +1,7 @@
-# COP4520 Raytracer 
+# COP4520 Raytracer
 
-To run it: 
+To run it:
 - Pre-requisites
-  - Java 21
-  - Gradle
+    - Java 21
+    - Gradle
 - `./gradlew run`

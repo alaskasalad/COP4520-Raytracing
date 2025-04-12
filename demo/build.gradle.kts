@@ -1,13 +1,16 @@
 plugins {
     id("jvm-conventions")
+    application
 }
 
 dependencies {
-    implementation(project(":core"))
+    implementation(rootProject)
 }
 
-tasks.withType<Jar> {
-    manifest {
-        attributes["Main-Class"] = "edu.ucf.cop4520raytracing.demo.DemoBootstrapper"
-    }
+application {
+    mainClass = "edu.ucf.cop4520raytracing.demo.DemoBootstrapper"
+}
+
+tasks.named<JavaExec>("run").configure {
+    this.environment("joml.fastmath", "true")
 }
