@@ -1,5 +1,6 @@
 package edu.ucf.cop4520raytracing.demo;
 
+import edu.ucf.cop4520raytracing.core.Camera;
 import edu.ucf.cop4520raytracing.core.Raytracer;
 import edu.ucf.cop4520raytracing.core.Scene;
 import edu.ucf.cop4520raytracing.core.light.DirectionalLight;
@@ -24,17 +25,37 @@ public class DemoBootstrapper {
         raytracer.setScene(Scene.DEFAULT);
         raytracer.start();
 
+//        Thread fpsTracker = Thread.startVirtualThread(() -> {
+//            try {
+//                while (!Thread.interrupted()) {
+//                    Thread.sleep(1000);
+//                    System.out.println("FPS: " + raytracer.numFramesCompletedPerTimeIncrement.get());
+//                    raytracer.numFramesCompletedPerTimeIncrement.set(0);
+//                }
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        });
+
         Thread commandListener = Thread.startVirtualThread(() -> {
             cmdloop:
             while (true) {
-                String s = input.nextLine();
-                var commands = Arrays.stream(s.split(" ")).map(String::trim).iterator();
-
+                if (!input.hasNext()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
                 try {
+                    String s = input.nextLine();
+                    var commands = Arrays.stream(s.split(" ")).map(String::trim).iterator();
+
                     String next = commands.next();
                     switch (next) {
                         case "debug" -> onDebugCommand(raytracer, commands);
                         case "scene" -> onSceneCommand(raytracer, commands);
+                        case "camera" -> onCameraCommand(raytracer, commands);
                         case "exit" -> {
                             raytracer.close();
                             System.exit(0);
@@ -42,9 +63,35 @@ public class DemoBootstrapper {
                         }
                         default -> System.out.println("Commands: debug, scene");
                     }
-                } catch (NoSuchElementException ignored) {}
+                } catch (Exception ignored) {}
             }
         });
+    }
+
+    private static void onCameraCommand(Raytracer raytracer, Iterator<String> commands) {
+        switch (commands.next()) {
+            case "new" -> {
+                var active = raytracer.getCameraController().getActiveCamera();
+                var id = raytracer.getCameraController().addCamera(Camera.builder().position(active.getPosition()).pitch(active.getPitch()).yaw(active.getYaw()).build());
+                raytracer.getCameraController().setActiveCamera(id);
+            }
+            case "active" -> {
+                var id = Integer.parseInt(commands.next());
+                if (raytracer.getCameraController().setActiveCamera(id)) {
+                    System.out.println("Switched to camera " + id);
+                } else {
+                    System.out.println("Camera not found: " + id);
+                }
+            }
+            case "list" -> {
+                var toPrint = raytracer.getCameraController().getCameras();
+                for (int i = 0; i < toPrint.size(); i++) {
+                    Object el = toPrint.get(i);
+                    String repr = el.toString();
+                    System.out.println(i + ": " + repr);
+                }
+            }
+        }
     }
 
 

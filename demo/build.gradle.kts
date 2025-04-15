@@ -1,5 +1,6 @@
 plugins {
     id("jvm-conventions")
+//    id("org.beryx.jlink") version "3.1.2-snapshot"
     application
 }
 

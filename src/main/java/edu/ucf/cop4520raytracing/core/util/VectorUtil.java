@@ -44,6 +44,6 @@ public final class VectorUtil {
 
     @Contract(pure=false, mutates="param1")
     public static Vector3d rotateToMatchPitchYaw(Vector3d original, double pitch, double yaw) {
-        return original.rotateY(pitch).rotateX(-yaw); // WHY DO WE HAVE TO FLIP THEM?????????????? WHY DOES IT ROTATE CLOCKWISE???
+        return original.rotateX(-yaw).rotateY(pitch);
     }
 }
