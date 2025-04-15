@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static edu.ucf.cop4520raytracing.core.util.KeyPress.keyDownOnly;
@@ -65,6 +66,8 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
      * The buffer being drawn to.
      */
     private ImageDisplay image = new ImageDisplay(800, 600);
+
+    public final AtomicInteger numFramesCompletedPerTimeIncrement = new AtomicInteger();
 
     @Getter
     private final CameraController cameraController;
@@ -168,6 +171,7 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
 
             render(scene);
             this.repaint();
+            numFramesCompletedPerTimeIncrement.incrementAndGet();
         } catch (Throwable rock) {
             // Kill the entire thing if it blows up
             running.set(false);
@@ -284,8 +288,8 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
         /**
          * All cameras currently active in the scene.
          */
+        @Getter
         private final List<Camera> cameras = new ArrayList<>();
-
         {
             cameras.add(Camera.builder().build());
         }
@@ -306,9 +310,12 @@ public class Raytracer extends JPanel implements KeyListener, AutoCloseable {
             }
         }
 
-        public void setActiveCamera(int id) {
+        public boolean setActiveCamera(int id) {
             if (id < cameras.size()) {
                 this.currentlyActiveCamera = cameras.get(id);
+                return true;
+            } else {
+                return false;
             }
         }
 

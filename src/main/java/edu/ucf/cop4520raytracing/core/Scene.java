@@ -6,7 +6,6 @@ import edu.ucf.cop4520raytracing.core.solid.Plane;
 import edu.ucf.cop4520raytracing.core.solid.Solid;
 import edu.ucf.cop4520raytracing.core.solid.Sphere;
 import edu.ucf.cop4520raytracing.core.util.Util;
-import kotlin.PreconditionsKt;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.Nullable;
@@ -17,7 +16,6 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -96,9 +94,9 @@ public class Scene implements Cloneable {
             throw new AssertionError();
         }
     }
-    
+
     // region Runtime Hooks
-    
+
     // region Lights
     /**
      * Add a light to the scene.
@@ -121,7 +119,7 @@ public class Scene implements Cloneable {
 
         return this.lights.get(id);
     }
-    
+
     public boolean removeLight(int id) {
         if (Util.inBounds(lights, id)) {
             lights.remove(id);
@@ -162,9 +160,9 @@ public class Scene implements Cloneable {
         return false;
     }
     // endregion
-    
-    
-    
+
+
+
     // endregion
 }
 
